@@ -23,7 +23,7 @@ It automatically receives feedback submissions, classifies them using Gemini, fi
 ## Read the Full Story
 
 For a complete breakdown of how this workflow was built, from learning webhooks to designing the logic, read the full Medium article:  
-[Read on Medium](https://tubasid.medium.com/from-confusion-to-automation-how-i-built-an-ai-powered-feedback-collector-in-n8n-with-gemini-74e2ea72d56f)
+[Read on Medium](https://tubasid.medium.com/the-feedback-collector-that-thinks-d86006e04614)
 
 ---
 
