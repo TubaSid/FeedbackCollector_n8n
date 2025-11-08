@@ -19,6 +19,8 @@ It automatically receives feedback submissions, classifies them using Gemini, fi
 | 8 | Webhook responds to Tally |
 
 ---
+<img width="1168" height="411" alt="Screenshot 2025-11-08 164333" src="https://github.com/user-attachments/assets/174c18af-eecd-4de1-8c5e-88fbcc7b7eed" />
+---
 
 ## Read the Full Story
 
