@@ -1,5 +1,4 @@
-# From Confusion to Automation: Building an AI-Powered Feedback Collector in n8n using Gemini
-
+# The Feedback Collector That Thinks - AI + n8n + Gemini
 An AI-powered feedback automation workflow built using **n8n**, **Tally.so**, **Google Gemini (free API)**, **Slack**, **Gmail** and **Google Sheets**.
 
 It automatically receives feedback submissions, classifies them using Gemini, filters gibberish or irrelevant text, sends formatted **Slack** alerts, replies to users via **Gmail** and logs everything neatly in **Google Sheets**, all in one compact workflow.
