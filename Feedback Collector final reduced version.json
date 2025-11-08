@@ -1,0 +1,523 @@
+{
+  "name": "Feedback Collector",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "feedback_collector_v1",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -576,
+        -336
+      ],
+      "id": "fb9199bb-b88b-4a5f-b6a6-51497763e029",
+      "name": "Webhook",
+      "webhookId": "86449a20-89c4-4a24-a950-4ea2ad21c6c3",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9e48af57-e5f3-45c9-92a7-6809441cdc31",
+              "name": "Full Name",
+              "value": "={{\n(() => {\n  const f = ($json.body?.data?.fields || [])\n    .find(x => x.key === 'question_X0OAje');  // replace with your field's key\n  return f?.value ?? '';\n})()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "fc8965a5-6c63-4a99-a9bf-b12e6391b14e",
+              "name": "Email",
+              "value": "={{\n(() => {\n  const f = ($json.body?.data?.fields || [])\n    .find(x => x.key === 'question_8xjD9k'); // replace with your actual key for Email\n  return f?.value ?? '';\n})()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "77253c35-f610-4f53-a0b8-35b78dcb8d5f",
+              "name": "Phone Number",
+              "value": "={{\n(() => {\n  const f = ($json.body?.data?.fields || [])\n    .find(x => x.key === 'question_0Oo04P'); // key for “Number” in your payload\n  return f?.value ?? '';\n})()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "dd76a620-9b22-478a-9e2c-da471ab24098",
+              "name": "=Type of Feedback",
+              "value": "={{\n(() => {\n  const FIELDS = $json.body?.data?.fields || [];\n  // find by label (trim + remove newlines so minor edits don't break)\n  const f = FIELDS.find(x => String(x.label).replace(/\\r?\\n/g,' ').trim() === 'Type of Feedback');\n  if (!f) return '';\n  const ids = Array.isArray(f.value) ? f.value : [f.value];\n  const id2text = new Map((f.options || []).map(o => [o.id, String(o.text).replace(/\\r?\\n/g,'').trim()]));\n  return ids.map(id => id2text.get(id)).filter(Boolean).join(', ');\n})()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "9e1859ae-deb5-404d-9b65-85f7fbd53b7b",
+              "name": "Please describe your feedback",
+              "value": "={{\n(() => {\n  const f = ($json.body?.data?.fields || [])\n    .find(x => x.key === 'question_5xE0Nv'); // key for “Please describe your feedback”\n  return f?.value ?? '';\n})()\n}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -352,
+        -336
+      ],
+      "id": "714dd30d-bb5e-44fc-9384-0fe7fb0c03d0",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{\n  $json.ai?.gibberish\n    ? 'C09QK5ZBE49' // ID of \"other-feedbacks\"\n    : ({\n        'Complain': 'C09Q6PAPHFW',        // complain\n        'Compliment': 'C09QJE5QY0Z',      // compliment\n        'Feature Request': 'C09PQ3GQKHV', // feature request\n        'Other': 'C09QK5ZBE49'              // other-feedbacks\n      })[$json.effectiveType] || 'GXXXXXXXX'\n}}\n"
+        },
+        "text": "={{\n(() => {\n  const name = $node[\"Edit Fields\"].json[\"Full Name\"] || '';\n  const email = $node[\"Edit Fields\"].json[\"Email\"] || '';\n  const msg = $node[\"Edit Fields\"].json[\"Please describe your feedback\"] || '';\n  if ($json.ai?.gibberish) return `Gibberish:\\n${msg}`;\n  const t = $json.effectiveType || 'Other';\n  const label = t === 'Complain' ? 'Complain' :\n                t === 'Compliment' ? 'Compliment' :\n                t === 'Feature Request' ? 'Feature Request' : 'Other Feedback';\n  return `Name: ${name}\\nEmail: ${email}\\n${label}: ${msg}`;\n})()\n}}\n",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        528,
+        -528
+      ],
+      "id": "6792ea21-7ca6-4e5c-ad84-cf921352e21f",
+      "name": "Send a message",
+      "webhookId": "5986fc9d-0ae7-4706-aa79-0d08512784ce",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "oAXN3wBOt012DYLD",
+          "name": "Slack account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1nExmS2v2iInES0Ue3_NU_gOJ4TB3gZUVHZKzXOFnmN8",
+          "mode": "list",
+          "cachedResultName": "Customer Feedback",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nExmS2v2iInES0Ue3_NU_gOJ4TB3gZUVHZKzXOFnmN8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{\n  $json.ai?.gibberish\n    ? 'Other'\n    : ({\n        'Complain': 'Complain',\n        'Compliment': 'Compliment',\n        'Feature Request': 'Feature Addition Request',\n        'Other': 'Other'\n      })[$json.effectiveType] || 'Other'\n}}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Submission ID": "={{$node[\"Webhook\"].json.body?.data?.submissionId || ''}}",
+            "Full Name": "={{ $('Edit Fields').item.json['Full Name'] }}",
+            "Email Address": "={{ $('Edit Fields').item.json.Email }}",
+            "Phone Number": "={{ $('Edit Fields').item.json['Phone Number'] }}",
+            "Feedback": "={{\n  $json.ai?.gibberish\n    ? `Gibberish: ${$node[\"Edit Fields\"].json[\"Please describe your feedback\"]}\\nAI: ${$json.ai.type} (${($json.ai.confidence ?? 0).toFixed(2)})`\n    : $node[\"Edit Fields\"].json[\"Please describe your feedback\"]\n}}",
+            "ai.reason": "={{$json.ai.reason || ''}}"
+          },
+          "matchingColumns": [
+            "Submission ID"
+          ],
+          "schema": [
+            {
+              "id": "Full Name",
+              "displayName": "Full Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Feedback",
+              "displayName": "Feedback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Submission ID",
+              "displayName": "Submission ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ai.reason",
+              "displayName": "ai.reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        528,
+        -144
+      ],
+      "id": "008fb5c2-4968-4d03-9725-db758b347f6d",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "kxc8lhq2w0MnC7bV",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{$node[\"Edit Fields\"].json[\"Email\"]}}",
+        "subject": "={{\n  ($json.ai?.gibberish === true)\n    ? 'Please clarify your feedback'\n    : ({\n        'Complain': 'We’ve received your feedback',\n        'Compliment': 'Thank you for your kind words!',\n        'Feature Request': 'Your feature request has been noted',\n        'Other': 'Thank you for reaching out'\n      })[$json.effectiveType || 'Other']\n}}",
+        "emailType": "text",
+        "message": "={{\n(() => {\n  const name = $node[\"Edit Fields\"].json[\"Full Name\"] || '';\n  if ($json.ai?.gibberish === true) {\n    return `Hi ${name},\n\nWe received your message, but it seems incomplete or unclear.\nCould you please rephrase or add more details so we can understand your feedback better?\nOnce you resubmit, our team will review it right away.\n\nThank you for your time,\nSupport Team`;\n  }\n  const t = $json.effectiveType || 'Other';\n  const map = {\n    'Complain': `Hi ${name},\n\nWe’re sorry to hear about your experience and appreciate you bringing this to our attention.\nOur team is reviewing your concern and will get back to you if more details are needed.\n\nThank you for helping us improve.\nRegards,\nSupport Team`,\n    'Compliment': `Hi ${name},\n\nWe truly appreciate your positive feedback.\nYour compliment motivates our team to keep delivering a better experience.\nThank you for taking the time to share your thoughts.\n\nBest regards,\nSupport Team`,\n    'Feature Request': `Hi ${name},\n\nThank you for suggesting a new feature.\nWe’ve recorded your idea and will share it with our product team for review.\nWe value your input and love hearing how we can make things better.\n\nWarm regards,\nSupport Team`,\n    'Other': `Hi ${name},\n\nThank you for getting in touch and sharing your thoughts.\nWe’ve received your message and will review it to see how best we can assist.\nIf your inquiry needs follow-up, our team will contact you soon.\n\nBest regards,\nSupport Team`\n  };\n  return map[t];\n})()\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        528,
+        -336
+      ],
+      "id": "723854de-aebd-46b4-b702-88b22dc66066",
+      "name": "Send a message3",
+      "webhookId": "fbdcf8b4-6ca1-4637-b54d-89e3094759a9",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nVbloszQYdEu6OyM",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        752,
+        -336
+      ],
+      "id": "714b8035-9db3-4d72-abfe-14f92cd38c2a",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{$vars.GEMINI_API_KEY}}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"generationConfig\": { \"temperature\": 0 },\n  \"contents\": [{\n    \"parts\": [{\n      \"text\": \"You are a strict classifier. Output JSON only with keys: type, gibberish, confidence, reason. type ∈ {Complain, Compliment, Feature Request, Other}. gibberish = true if message is empty or random.\\n\\nSelectedType: {{ $json['Type of Feedback'] }}\\nMessage: {{ $json['Please describe your feedback'] }}\\n\\nReturn only JSON.\"\n    }]\n  }]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -128,
+        -336
+      ],
+      "id": "fa9a51db-8ade-454f-ba66-de3a215bbbcc",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "//----------------------------------------------------\n// Combined Gemini parse + relevance + routing logic\n//----------------------------------------------------\n\n// Inputs: from Edit Fields + HTTP Request\nconst fields = $json.body?.data?.fields || [];\nconst findVal = (label) => {\n  const f = fields.find(x => x.label?.trim() === label);\n  return f?.value ?? '';\n};\n\n// Get values from form\nconst sel = String(findVal('Type of Feedback') || $('Edit Fields').first().json['Type of Feedback'] || '').trim();\n\nconst msg = String(findVal('Please describe your feedback') || $('Edit Fields').first().json['Please describe your feedback']|| '')\n  .replace(/\\s+/g, ' ')\n  .trim();\nconst name = findVal('Full Name') || $json[\"Full Name\"];\nconst email = findVal('Email') || $json[\"Email\"];\n\n//---------------------------------------------\n// 1) Parse Gemini output safely\n//---------------------------------------------\nlet raw = $json.candidates?.[0]?.content?.parts?.[0]?.text || '{}';\nraw = raw.replace(/```(?:json)?\\s*([\\s\\S]*?)\\s*```/i, '$1').trim();\nlet ai = {};\ntry { ai = JSON.parse(raw); } catch { ai = { type: 'Other', gibberish: false, confidence: 0 }; }\n\n//---------------------------------------------\n// 2) Heuristics for relevance\n//---------------------------------------------\nconst len   = msg.length;\nconst words = msg.split(' ').filter(Boolean);\nconst uniq  = new Set(words.map(w => w.toLowerCase())).size;\n\nconst isShort        = len < 8;\nconst fewUniqueShort = uniq < 2 && len < 20;\nconst hasMoneyAsk    = /\\b(need|send|pay|give|loan|transfer)\\b.*\\b(\\d{2,}|\\$|€|rs|inr)\\b/i.test(msg);\nconst manyEmojiHaha  = /(\\p{Extended_Pictographic}|ha){3,}/iu.test(msg);\nconst mismatch       = ai.type && sel && ai.type !== sel && (ai.confidence ?? 0) >= 0.6;\n\n// Initial gibberish\nlet gibberish = Boolean(ai.gibberish) || isShort || fewUniqueShort || manyEmojiHaha || hasMoneyAsk || mismatch;\n\n// Override: short but meaningful phrases\nconst seemsSentence = /\\b(use|know|need|want|help|fix|work|problem|issue|how|when|where|what|cannot|can't|don'?t)\\b/i.test(msg);\nif (seemsSentence && len > 10) gibberish = false;\n\n//---------------------------------------------\n// 3) Final type + output\n//---------------------------------------------\nconst effectiveType = gibberish ? 'Other' : (ai.type || sel || 'Other');\n\nreturn [{\n  json: {\n    \"Full Name\": name,\n    \"Email\": email,\n    \"Type of Feedback\": sel,\n    \"Please describe your feedback\": msg,\n    ai: { ...ai, gibberish },\n    flags: { isShort, fewUniqueShort, manyEmojiHaha, hasMoneyAsk, mismatch, seemsSentence, len, uniq },\n    effectiveType\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        96,
+        -336
+      ],
+      "id": "fd960e9c-b75d-4f4c-8cf1-ed108ebcf9b7",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "tubasid.app.n8n.cloud",
+            "user-agent": "Tally Webhooks",
+            "content-length": "1145",
+            "accept": "application/json, text/plain, */*",
+            "accept-encoding": "gzip, br",
+            "baggage": "sentry-environment=production,sentry-release=e144aee0988af222741edb7f051c0d3a85ecde8e,sentry-public_key=6af4b6673f1648edaa8fef3f2ca43405,sentry-trace_id=57f5cc827c83cec689423544ce6e6877,sentry-org_id=407628,sentry-sampled=false,sentry-sample_rand=0.564660887994046,sentry-sample_rate=0.0001",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "34.96.62.183",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "BE",
+            "cf-ray": "99a80f4d81f9196c-LHR",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "sentry-trace": "57f5cc827c83cec689423544ce6e6877-61ba7a0161676dd6-0",
+            "x-forwarded-for": "34.96.62.183, 172.69.224.216",
+            "x-forwarded-host": "tubasid.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-55-69f456d475-5jcj8",
+            "x-is-trusted": "yes",
+            "x-real-ip": "34.96.62.183"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "eventId": "4af29106-9a0f-41c1-89da-eb839e518ea4",
+            "eventType": "FORM_RESPONSE",
+            "createdAt": "2025-11-06T22:34:42.116Z",
+            "data": {
+              "responseId": "QKXGVgg",
+              "submissionId": "QKXGVgg",
+              "respondentId": "Ek5L6Xl",
+              "formId": "n02K89",
+              "formName": "Feedback Form",
+              "createdAt": "2025-11-06T22:34:42.000Z",
+              "fields": [
+                {
+                  "key": "question_X0OAje",
+                  "label": "Full Name",
+                  "type": "INPUT_TEXT",
+                  "value": "tee"
+                },
+                {
+                  "key": "question_8xjD9k",
+                  "label": "Email Address",
+                  "type": "INPUT_EMAIL",
+                  "value": "tubaasid@gmail.com"
+                },
+                {
+                  "key": "question_0Oo04P",
+                  "label": "Number",
+                  "type": "INPUT_PHONE_NUMBER",
+                  "value": "+393455031774"
+                },
+                {
+                  "key": "question_zYWBVZ",
+                  "label": "Type of Feedback",
+                  "type": "MULTIPLE_CHOICE",
+                  "value": [
+                    "2cfbd345-16c4-4643-b98e-53efc27219e5"
+                  ],
+                  "options": [
+                    {
+                      "id": "29d9d1f4-f302-46d9-963e-4816426a93f3",
+                      "text": "Complain"
+                    },
+                    {
+                      "id": "cad1bc9c-aeaf-4a7f-af6a-a2f62d21bf12",
+                      "text": "Compliment"
+                    },
+                    {
+                      "id": "2cfbd345-16c4-4643-b98e-53efc27219e5",
+                      "text": "Feature Request"
+                    },
+                    {
+                      "id": "b91b5d3b-4d10-4fe3-9896-7d3083c84a2f",
+                      "text": "Other",
+                      "isOtherOption": true,
+                      "optionId": "b91b5d3b-4d10-4fe3-9896-7d3083c84a2f"
+                    }
+                  ]
+                },
+                {
+                  "key": "question_5xE0Nv",
+                  "label": "Please describe your feedback\n",
+                  "type": "TEXTAREA",
+                  "value": "sjkjsjs"
+                }
+              ]
+            }
+          },
+          "webhookUrl": "https://tubasid.app.n8n.cloud/webhook/feedback_collector_v1",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message3": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "none",
+    "availableInMCP": false,
+    "errorWorkflow": "smb2yiMJIdriHa0k",
+    "saveExecutionProgress": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true
+  },
+  "versionId": "7e7afe1a-d9ff-4ef9-a879-ad392da16e51",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "27f115a7c674d571468fbb03eea7822b778e772836ab4980200c4e4f95f6d432"
+  },
+  "id": "smb2yiMJIdriHa0k",
+  "tags": []
+}
